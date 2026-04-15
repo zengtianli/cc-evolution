@@ -1,0 +1,235 @@
+# CC 自我进化系统变更注册表
+# 每个条目描述一个变更项：做了什么、替代了什么、为什么
+
+project: CC 自我进化系统重构
+date: 2026-04-16
+repos:
+  - cc-configs
+  - devtools
+  - cclog
+  - repo-dashboard
+  - cc-evolution
+
+phases:
+  - id: 0
+    name: Changelog 站点
+    description: 建立变更跟踪基础设施，所有后续改动都能被记录和回溯
+
+  - id: 1
+    name: 数据层
+    description: Memory 加入时效管理，CLAUDE.md 瘦身减少上下文污染
+
+  - id: 2
+    name: 核心引擎
+    description: 反馈闭环从 regex 升级到 LLM，Hook 链从串行改为并行
+
+  - id: 3
+    name: 分发层
+    description: Skills 按需加载，Commands 合并精简
+
+  - id: 4
+    name: 扩展层
+    description: 统一知识查询、Skill 自动毕业、会话质量评分
+
+  - id: 5
+    name: 自动化层
+    description: HANDOFF 自动生成，Changelog 站点最终部署
+
+changes:
+  - id: 1
+    phase: 2
+    title: LLM 反馈闭环
+    status: pending
+    repo: devtools
+    files:
+      - scripts/tools/session_reflect.py
+      - scripts/tools/llm_client.py
+    before: |
+      session_reflect.py 用正则（"不要|别|错了"）检测反馈信号，
+      结果写到 reflect-flags.log 和 macOS 通知，然后到此为止。
+      检测到的反馈不会变成 memory 更新，人是瓶颈。
+    after: |
+      新增 --llm 模式，调用 Haiku 分析会话尾部消息，
+      输出结构化 JSON（feedback_rules + memory_updates）。
+      置信度 ≥ 0.7 时自动写入 memory 文件和 MEMORY.md 索引。
+      LLM 失败自动降级回 regex 模式。
+    why: 让系统能从运行数据中自动学习，不需要人工 /recap
+
+  - id: 2
+    phase: 3
+    title: Skills 动态注入
+    status: pending
+    repo: cc-configs
+    files:
+      - harness.yaml
+      - skills/ → domain-skills/ 重组
+    before: |
+      16 个 skills 全部在 ~/.claude/skills/ 全局 symlink，
+      每次会话 system prompt 列出 60+ skill triggers，
+      90% 的会话里 95% 的 skills 是噪声。
+    after: |
+      全局只保留 3 个（context, plan-first, harness），
+      12 个 domain skills 移到 domain-skills/ 目录，
+      通过 harness sync 分发到各项目 .claude/skills/。
+      在 ~/Dev/website/ 工作时不再看到水利相关 triggers。
+    why: 减少上下文噪声，降低误触发概率
+
+  - id: 3
+    phase: 4
+    title: 统一知识 MCP
+    status: pending
+    repo: cclog
+    files:
+      - src/cclog/knowledge.py
+      - src/cclog/mcp_server.py
+    before: |
+      知识分布在 5 个独立存储：cclog DB, memory/*.md,
+      skill-tracker.json, tasks.json, reflect-flags.log。
+      问"上次部署遇到什么问题"需要分别查询。
+    after: |
+      cclog MCP 新增 search_knowledge() 跨源搜索，
+      一个查询同时检索 5 个数据源。
+      新增 get_evolution_status() 返回系统健康报告。
+    why: 一个入口查所有知识
+
+  - id: 4
+    phase: 3
+    title: Commands 合并
+    status: pending
+    repo: cc-configs
+    files:
+      - commands/ 合并+归档
+    before: |
+      50 个 commands（39 active + 12 archived），
+      fix-refs/fix-heading/fix-numbering 三个修复命令分开，
+      review/review-deep 同一件事两个入口，
+      auggie-dash/auggie-fix 都是 auggie 相关。
+    after: |
+      合并为 ~27 个 active commands。
+      /fix refs|heading|numbering|all 统一入口。
+      /review --deep 替代独立的 /review-deep。
+      /auggie dash|fix 替代独立命令。
+      12 个旧命令归档到 commands/archive/。
+    why: 降低认知负担，减少 skill trigger 列表长度
+
+  - id: 5
+    phase: 1
+    title: Memory TTL & Confidence
+    status: pending
+    repo: devtools
+    files:
+      - scripts/tools/memory_ttl_migrate.py
+      - scripts/tools/session_start.sh
+    before: |
+      32 个 memory 文件，frontmatter 只有 name/description/type。
+      无过期机制，无置信度评分，无冲突检测。
+      几周前的 dual_monitor_issue 还在首页。
+    after: |
+      每个 memory 文件新增 confidence/last_verified/decay_days。
+      按类型初始化：user=1.0/365d, feedback=0.9/90d,
+      reference=0.7/60d, project=0.6/30d。
+      SessionStart 检查并警告过期 memory。
+    why: 让 memory 有生命周期，自动老化过时信息
+
+  - id: 6
+    phase: 1
+    title: CLAUDE.md 瘦身
+    status: pending
+    repo: devtools
+    files:
+      - ~/Dev/CLAUDE.md
+    before: |
+      ~/Dev/CLAUDE.md 约 152 行，包含 VPS 详情、
+      完整 repo 地图（29 个）、ZDWP symlink 说明。
+      每次会话全部加载，大部分时候用不到。
+    after: |
+      精简到 ~60 行核心规则。
+      VPS 详情 → reference_vps_architecture.md（memory）
+      Repo 地图 → reference_repo_map.md（memory）
+      ZDWP symlink → 删除（structure skill 已覆盖）
+    why: 减少每次会话的固定 context 消耗
+
+  - id: 7
+    phase: 2
+    title: Hook 链并行化
+    status: pending
+    repo: devtools
+    files:
+      - scripts/tools/session_end_orchestrator.sh
+    before: |
+      SessionEnd hook 串行执行：
+      task_analyzer.py --latest && cclog index -q
+      两个操作串行跑，30s timeout 可能不够。
+    after: |
+      新建 session_end_orchestrator.sh，
+      3 个任务并行：task_analyzer + session_reflect --llm + cclog index。
+      Stop hook 保持 regex-only（<1s），timeout 减到 5s。
+    why: 避免 SessionEnd 超时丢失分析结果
+
+  - id: 8
+    phase: 4
+    title: Skill 自动毕业
+    status: pending
+    repo: devtools
+    files:
+      - scripts/tools/session_reflect.py
+      - scripts/tools/session_start.sh
+    before: |
+      skill-candidates.md 追踪模式出现次数。
+      次数 ≥ 3 时弹通知，但用户必须手动创建 skill。
+    after: |
+      达到阈值时自动生成 skill 骨架到 drafts/ 目录。
+      SessionStart 提示"N 个 skill 草稿待审阅"。
+    why: 减少 skill 创建的人工步骤
+
+  - id: 9
+    phase: 4
+    title: 会话质量评分
+    status: pending
+    repo: repo-dashboard
+    files:
+      - lib/task_analyzer.py
+    before: |
+      task_analyzer 用 Haiku 判断 done/in-progress/stale，
+      输出 title/outcome/next_step/confidence。
+      没有质量维度。
+    after: |
+      LLM prompt 新增 quality_score (0-1)、
+      corrections（用户纠正次数）、retries（重试次数）。
+      可按 skill/项目追踪质量趋势。
+    why: 量化会话效果，识别需要迭代的 skills
+
+  - id: 10
+    phase: 5
+    title: HANDOFF.md 自动生成
+    status: pending
+    repo: repo-dashboard
+    files:
+      - lib/task_analyzer.py
+    before: |
+      HANDOFF.md 由 /handoff 命令手动生成。
+      用户必须主动调用，容易遗忘。
+    after: |
+      SessionEnd orchestrator 并行调用
+      task_analyzer --handoff，从 tasks.json 自动生成
+      HANDOFF.md 到 session CWD。手动内容被保留合并。
+    why: 跨会话上下文传递完全自动化
+
+  - id: 11
+    phase: 0
+    title: Changelog 站点
+    status: in_progress
+    repo: cc-evolution
+    files:
+      - generate.py
+      - changes.yaml
+      - deploy.sh
+    before: |
+      配置变更只记录在 git log 和本地文档里，
+      不小心可能被删，没有统一回顾入口。
+    after: |
+      changelog.tianlizeng.cloud 静态站点，
+      Python 生成 HTML，时间线视图，
+      每个变更含前后对比、关联 commits、状态追踪。
+      GitHub push 自动重建。
+    why: 让所有配置变更可追溯、可回顾
