@@ -104,7 +104,7 @@ def _parse_yaml_minimal(path: str) -> dict:
     return result
 
 
-def get_git_log(repo_path: str, since: str = "2026-04-16", max_count: int = 50) -> list[dict]:
+def get_git_log(repo_path: str, since: str = "2026-04-15", max_count: int = 50) -> list[dict]:
     """Get recent git commits from a repo."""
     if not Path(repo_path).exists():
         return []
@@ -175,13 +175,8 @@ def render_change_card(change: dict, commits: list[dict]) -> str:
         )
         files_html = f'<div class="files">{files_items}</div>'
 
-    # Filter commits related to this change
-    change_title_words = set(change.get("title", "").lower().split())
-    related_commits = []
-    for c in commits:
-        msg_lower = c["message"].lower()
-        if any(w in msg_lower for w in change_title_words if len(w) > 2):
-            related_commits.append(c)
+    # Show all commits from the same repo
+    related_commits = commits[:5]
 
     commits_html = ""
     if related_commits:
@@ -237,13 +232,10 @@ def render_html(data: dict, all_commits: dict[str, list[dict]]) -> str:
     phases_html = ""
     for pid in sorted(changes_by_phase.keys()):
         phase = phases.get(pid, {"name": f"Phase {pid}", "description": ""})
-        # Collect all commits for this phase's repos
-        phase_commits = []
-        for c in changes_by_phase[pid]:
-            repo = c.get("repo", "")
-            phase_commits.extend(all_commits.get(repo, []))
-
-        cards = "".join(render_change_card(c, phase_commits) for c in changes_by_phase[pid])
+        cards = "".join(
+            render_change_card(c, all_commits.get(c.get("repo", ""), []))
+            for c in changes_by_phase[pid]
+        )
         phases_html += f"""
         <div class="phase">
           <div class="phase-header">
@@ -545,7 +537,7 @@ def main():
     all_commits = {}
     for repo in repos:
         repo_path = get_repo_path(repo)
-        commits = get_git_log(repo_path, since="2026-04-16")
+        commits = get_git_log(repo_path)
         if commits:
             all_commits[repo] = commits
 

@@ -39,7 +39,7 @@ changes:
   - id: 1
     phase: 2
     title: LLM 反馈闭环
-    status: pending
+    status: done
     repo: devtools
     files:
       - scripts/tools/session_reflect.py
@@ -58,7 +58,7 @@ changes:
   - id: 2
     phase: 3
     title: Skills 动态注入
-    status: pending
+    status: done
     repo: cc-configs
     files:
       - harness.yaml
@@ -77,7 +77,7 @@ changes:
   - id: 3
     phase: 4
     title: 统一知识 MCP
-    status: pending
+    status: done
     repo: cclog
     files:
       - src/cclog/knowledge.py
@@ -95,7 +95,7 @@ changes:
   - id: 4
     phase: 3
     title: Commands 合并
-    status: pending
+    status: done
     repo: cc-configs
     files:
       - commands/ 合并+归档
@@ -115,7 +115,7 @@ changes:
   - id: 5
     phase: 1
     title: Memory TTL & Confidence
-    status: pending
+    status: done
     repo: devtools
     files:
       - scripts/tools/memory_ttl_migrate.py
@@ -134,7 +134,7 @@ changes:
   - id: 6
     phase: 1
     title: CLAUDE.md 瘦身
-    status: pending
+    status: done
     repo: devtools
     files:
       - ~/Dev/CLAUDE.md
@@ -152,7 +152,7 @@ changes:
   - id: 7
     phase: 2
     title: Hook 链并行化
-    status: pending
+    status: done
     repo: devtools
     files:
       - scripts/tools/session_end_orchestrator.sh
@@ -169,7 +169,7 @@ changes:
   - id: 8
     phase: 4
     title: Skill 自动毕业
-    status: pending
+    status: done
     repo: devtools
     files:
       - scripts/tools/session_reflect.py
@@ -185,7 +185,7 @@ changes:
   - id: 9
     phase: 4
     title: 会话质量评分
-    status: pending
+    status: done
     repo: repo-dashboard
     files:
       - lib/task_analyzer.py
@@ -202,7 +202,7 @@ changes:
   - id: 10
     phase: 5
     title: HANDOFF.md 自动生成
-    status: pending
+    status: done
     repo: repo-dashboard
     files:
       - lib/task_analyzer.py
@@ -218,7 +218,7 @@ changes:
   - id: 11
     phase: 0
     title: Changelog 站点
-    status: in_progress
+    status: done
     repo: cc-evolution
     files:
       - generate.py
