@@ -1,0 +1,38 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install deps
+        run: pip install pyyaml
+
+      - name: Generate site
+        run: python3 generate.py
+
+      - uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.VPS_SSH_KEY }}
+
+      - name: Trust VPS host
+        run: ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Sync to VPS
+        run: rsync -avz --delete site/ root@${{ secrets.VPS_HOST }}:/var/www/changelog/
+
+      - name: Verify
+        run: |
+          CODE=$(curl --silent -o /dev/null -w "%{http_code}" https://changelog.tianlizeng.cloud || echo 000)
+          echo "HTTP $CODE"
+          [[ "$CODE" == "200" || "$CODE" == "302" ]]
