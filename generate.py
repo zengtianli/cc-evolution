@@ -12,6 +12,11 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+def _load_site_header() -> str:
+    p = Path(__file__).parent / "site-header.html"
+    return p.read_text(encoding="utf-8") if p.exists() else ""
+
+
 def _load_navbar() -> str:
     for p in [Path(__file__).parent / "site-navbar.html",
               Path.home() / "Dev" / "devtools" / "lib" / "templates" / "site-navbar.html"]:
@@ -21,6 +26,7 @@ def _load_navbar() -> str:
 
 
 NAVBAR_HTML = _load_navbar()
+SITE_HEADER_HTML = _load_site_header()
 
 # --- 尝试加载 PyYAML，无则用简易解析 ---
 try:
@@ -496,9 +502,8 @@ def render_html(data: dict, all_commits: dict[str, list[dict]]) -> str:
 </head>
 <body>
 {NAVBAR_HTML}
+{SITE_HEADER_HTML}
 <header>
-  <h1>CC Evolution</h1>
-  <p>Claude Code 自我进化系统变更日志 — 记录每一次配置生态重构</p>
   <div class="stats">
     <div class="stat"><strong>{total}</strong>变更项</div>
     <div class="stat"><strong>{done}</strong>已完成</div>
